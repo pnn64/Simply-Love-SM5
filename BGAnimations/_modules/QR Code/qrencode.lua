@@ -45,98 +45,31 @@
 ---
 --- We start with some helper functions
 
--- To calculate xor we need to do that bitwise. This helper table speeds up the num-to-bit
--- part a bit (no pun intended)
-local cclxvi = {[0] = {0,0,0,0,0,0,0,0}, {1,0,0,0,0,0,0,0}, {0,1,0,0,0,0,0,0}, {1,1,0,0,0,0,0,0},
-{0,0,1,0,0,0,0,0}, {1,0,1,0,0,0,0,0}, {0,1,1,0,0,0,0,0}, {1,1,1,0,0,0,0,0},
-{0,0,0,1,0,0,0,0}, {1,0,0,1,0,0,0,0}, {0,1,0,1,0,0,0,0}, {1,1,0,1,0,0,0,0},
-{0,0,1,1,0,0,0,0}, {1,0,1,1,0,0,0,0}, {0,1,1,1,0,0,0,0}, {1,1,1,1,0,0,0,0},
-{0,0,0,0,1,0,0,0}, {1,0,0,0,1,0,0,0}, {0,1,0,0,1,0,0,0}, {1,1,0,0,1,0,0,0},
-{0,0,1,0,1,0,0,0}, {1,0,1,0,1,0,0,0}, {0,1,1,0,1,0,0,0}, {1,1,1,0,1,0,0,0},
-{0,0,0,1,1,0,0,0}, {1,0,0,1,1,0,0,0}, {0,1,0,1,1,0,0,0}, {1,1,0,1,1,0,0,0},
-{0,0,1,1,1,0,0,0}, {1,0,1,1,1,0,0,0}, {0,1,1,1,1,0,0,0}, {1,1,1,1,1,0,0,0},
-{0,0,0,0,0,1,0,0}, {1,0,0,0,0,1,0,0}, {0,1,0,0,0,1,0,0}, {1,1,0,0,0,1,0,0},
-{0,0,1,0,0,1,0,0}, {1,0,1,0,0,1,0,0}, {0,1,1,0,0,1,0,0}, {1,1,1,0,0,1,0,0},
-{0,0,0,1,0,1,0,0}, {1,0,0,1,0,1,0,0}, {0,1,0,1,0,1,0,0}, {1,1,0,1,0,1,0,0},
-{0,0,1,1,0,1,0,0}, {1,0,1,1,0,1,0,0}, {0,1,1,1,0,1,0,0}, {1,1,1,1,0,1,0,0},
-{0,0,0,0,1,1,0,0}, {1,0,0,0,1,1,0,0}, {0,1,0,0,1,1,0,0}, {1,1,0,0,1,1,0,0},
-{0,0,1,0,1,1,0,0}, {1,0,1,0,1,1,0,0}, {0,1,1,0,1,1,0,0}, {1,1,1,0,1,1,0,0},
-{0,0,0,1,1,1,0,0}, {1,0,0,1,1,1,0,0}, {0,1,0,1,1,1,0,0}, {1,1,0,1,1,1,0,0},
-{0,0,1,1,1,1,0,0}, {1,0,1,1,1,1,0,0}, {0,1,1,1,1,1,0,0}, {1,1,1,1,1,1,0,0},
-{0,0,0,0,0,0,1,0}, {1,0,0,0,0,0,1,0}, {0,1,0,0,0,0,1,0}, {1,1,0,0,0,0,1,0},
-{0,0,1,0,0,0,1,0}, {1,0,1,0,0,0,1,0}, {0,1,1,0,0,0,1,0}, {1,1,1,0,0,0,1,0},
-{0,0,0,1,0,0,1,0}, {1,0,0,1,0,0,1,0}, {0,1,0,1,0,0,1,0}, {1,1,0,1,0,0,1,0},
-{0,0,1,1,0,0,1,0}, {1,0,1,1,0,0,1,0}, {0,1,1,1,0,0,1,0}, {1,1,1,1,0,0,1,0},
-{0,0,0,0,1,0,1,0}, {1,0,0,0,1,0,1,0}, {0,1,0,0,1,0,1,0}, {1,1,0,0,1,0,1,0},
-{0,0,1,0,1,0,1,0}, {1,0,1,0,1,0,1,0}, {0,1,1,0,1,0,1,0}, {1,1,1,0,1,0,1,0},
-{0,0,0,1,1,0,1,0}, {1,0,0,1,1,0,1,0}, {0,1,0,1,1,0,1,0}, {1,1,0,1,1,0,1,0},
-{0,0,1,1,1,0,1,0}, {1,0,1,1,1,0,1,0}, {0,1,1,1,1,0,1,0}, {1,1,1,1,1,0,1,0},
-{0,0,0,0,0,1,1,0}, {1,0,0,0,0,1,1,0}, {0,1,0,0,0,1,1,0}, {1,1,0,0,0,1,1,0},
-{0,0,1,0,0,1,1,0}, {1,0,1,0,0,1,1,0}, {0,1,1,0,0,1,1,0}, {1,1,1,0,0,1,1,0},
-{0,0,0,1,0,1,1,0}, {1,0,0,1,0,1,1,0}, {0,1,0,1,0,1,1,0}, {1,1,0,1,0,1,1,0},
-{0,0,1,1,0,1,1,0}, {1,0,1,1,0,1,1,0}, {0,1,1,1,0,1,1,0}, {1,1,1,1,0,1,1,0},
-{0,0,0,0,1,1,1,0}, {1,0,0,0,1,1,1,0}, {0,1,0,0,1,1,1,0}, {1,1,0,0,1,1,1,0},
-{0,0,1,0,1,1,1,0}, {1,0,1,0,1,1,1,0}, {0,1,1,0,1,1,1,0}, {1,1,1,0,1,1,1,0},
-{0,0,0,1,1,1,1,0}, {1,0,0,1,1,1,1,0}, {0,1,0,1,1,1,1,0}, {1,1,0,1,1,1,1,0},
-{0,0,1,1,1,1,1,0}, {1,0,1,1,1,1,1,0}, {0,1,1,1,1,1,1,0}, {1,1,1,1,1,1,1,0},
-{0,0,0,0,0,0,0,1}, {1,0,0,0,0,0,0,1}, {0,1,0,0,0,0,0,1}, {1,1,0,0,0,0,0,1},
-{0,0,1,0,0,0,0,1}, {1,0,1,0,0,0,0,1}, {0,1,1,0,0,0,0,1}, {1,1,1,0,0,0,0,1},
-{0,0,0,1,0,0,0,1}, {1,0,0,1,0,0,0,1}, {0,1,0,1,0,0,0,1}, {1,1,0,1,0,0,0,1},
-{0,0,1,1,0,0,0,1}, {1,0,1,1,0,0,0,1}, {0,1,1,1,0,0,0,1}, {1,1,1,1,0,0,0,1},
-{0,0,0,0,1,0,0,1}, {1,0,0,0,1,0,0,1}, {0,1,0,0,1,0,0,1}, {1,1,0,0,1,0,0,1},
-{0,0,1,0,1,0,0,1}, {1,0,1,0,1,0,0,1}, {0,1,1,0,1,0,0,1}, {1,1,1,0,1,0,0,1},
-{0,0,0,1,1,0,0,1}, {1,0,0,1,1,0,0,1}, {0,1,0,1,1,0,0,1}, {1,1,0,1,1,0,0,1},
-{0,0,1,1,1,0,0,1}, {1,0,1,1,1,0,0,1}, {0,1,1,1,1,0,0,1}, {1,1,1,1,1,0,0,1},
-{0,0,0,0,0,1,0,1}, {1,0,0,0,0,1,0,1}, {0,1,0,0,0,1,0,1}, {1,1,0,0,0,1,0,1},
-{0,0,1,0,0,1,0,1}, {1,0,1,0,0,1,0,1}, {0,1,1,0,0,1,0,1}, {1,1,1,0,0,1,0,1},
-{0,0,0,1,0,1,0,1}, {1,0,0,1,0,1,0,1}, {0,1,0,1,0,1,0,1}, {1,1,0,1,0,1,0,1},
-{0,0,1,1,0,1,0,1}, {1,0,1,1,0,1,0,1}, {0,1,1,1,0,1,0,1}, {1,1,1,1,0,1,0,1},
-{0,0,0,0,1,1,0,1}, {1,0,0,0,1,1,0,1}, {0,1,0,0,1,1,0,1}, {1,1,0,0,1,1,0,1},
-{0,0,1,0,1,1,0,1}, {1,0,1,0,1,1,0,1}, {0,1,1,0,1,1,0,1}, {1,1,1,0,1,1,0,1},
-{0,0,0,1,1,1,0,1}, {1,0,0,1,1,1,0,1}, {0,1,0,1,1,1,0,1}, {1,1,0,1,1,1,0,1},
-{0,0,1,1,1,1,0,1}, {1,0,1,1,1,1,0,1}, {0,1,1,1,1,1,0,1}, {1,1,1,1,1,1,0,1},
-{0,0,0,0,0,0,1,1}, {1,0,0,0,0,0,1,1}, {0,1,0,0,0,0,1,1}, {1,1,0,0,0,0,1,1},
-{0,0,1,0,0,0,1,1}, {1,0,1,0,0,0,1,1}, {0,1,1,0,0,0,1,1}, {1,1,1,0,0,0,1,1},
-{0,0,0,1,0,0,1,1}, {1,0,0,1,0,0,1,1}, {0,1,0,1,0,0,1,1}, {1,1,0,1,0,0,1,1},
-{0,0,1,1,0,0,1,1}, {1,0,1,1,0,0,1,1}, {0,1,1,1,0,0,1,1}, {1,1,1,1,0,0,1,1},
-{0,0,0,0,1,0,1,1}, {1,0,0,0,1,0,1,1}, {0,1,0,0,1,0,1,1}, {1,1,0,0,1,0,1,1},
-{0,0,1,0,1,0,1,1}, {1,0,1,0,1,0,1,1}, {0,1,1,0,1,0,1,1}, {1,1,1,0,1,0,1,1},
-{0,0,0,1,1,0,1,1}, {1,0,0,1,1,0,1,1}, {0,1,0,1,1,0,1,1}, {1,1,0,1,1,0,1,1},
-{0,0,1,1,1,0,1,1}, {1,0,1,1,1,0,1,1}, {0,1,1,1,1,0,1,1}, {1,1,1,1,1,0,1,1},
-{0,0,0,0,0,1,1,1}, {1,0,0,0,0,1,1,1}, {0,1,0,0,0,1,1,1}, {1,1,0,0,0,1,1,1},
-{0,0,1,0,0,1,1,1}, {1,0,1,0,0,1,1,1}, {0,1,1,0,0,1,1,1}, {1,1,1,0,0,1,1,1},
-{0,0,0,1,0,1,1,1}, {1,0,0,1,0,1,1,1}, {0,1,0,1,0,1,1,1}, {1,1,0,1,0,1,1,1},
-{0,0,1,1,0,1,1,1}, {1,0,1,1,0,1,1,1}, {0,1,1,1,0,1,1,1}, {1,1,1,1,0,1,1,1},
-{0,0,0,0,1,1,1,1}, {1,0,0,0,1,1,1,1}, {0,1,0,0,1,1,1,1}, {1,1,0,0,1,1,1,1},
-{0,0,1,0,1,1,1,1}, {1,0,1,0,1,1,1,1}, {0,1,1,0,1,1,1,1}, {1,1,1,0,1,1,1,1},
-{0,0,0,1,1,1,1,1}, {1,0,0,1,1,1,1,1}, {0,1,0,1,1,1,1,1}, {1,1,0,1,1,1,1,1},
-{0,0,1,1,1,1,1,1}, {1,0,1,1,1,1,1,1}, {0,1,1,1,1,1,1,1}, {1,1,1,1,1,1,1,1}}
+-- Four-bit XOR results let us combine two lookups without allocating a table
+-- for every byte. Both indices range from 0 to 15.
+local xor_nibbles = {
+	[0] = {[0]=0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15},
+	[1] = {[0]=1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14},
+	[2] = {[0]=2,3,0,1,6,7,4,5,10,11,8,9,14,15,12,13},
+	[3] = {[0]=3,2,1,0,7,6,5,4,11,10,9,8,15,14,13,12},
+	[4] = {[0]=4,5,6,7,0,1,2,3,12,13,14,15,8,9,10,11},
+	[5] = {[0]=5,4,7,6,1,0,3,2,13,12,15,14,9,8,11,10},
+	[6] = {[0]=6,7,4,5,2,3,0,1,14,15,12,13,10,11,8,9},
+	[7] = {[0]=7,6,5,4,3,2,1,0,15,14,13,12,11,10,9,8},
+	[8] = {[0]=8,9,10,11,12,13,14,15,0,1,2,3,4,5,6,7},
+	[9] = {[0]=9,8,11,10,13,12,15,14,1,0,3,2,5,4,7,6},
+	[10] = {[0]=10,11,8,9,14,15,12,13,2,3,0,1,6,7,4,5},
+	[11] = {[0]=11,10,9,8,15,14,13,12,3,2,1,0,7,6,5,4},
+	[12] = {[0]=12,13,14,15,8,9,10,11,4,5,6,7,0,1,2,3},
+	[13] = {[0]=13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2},
+	[14] = {[0]=14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1},
+	[15] = {[0]=15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0},
+}
 
--- Return a number that is the result of interpreting the table tbl (msb first)
-local function tbl_to_number(tbl)
-	local n = #tbl
-	local rslt = 0
-	local power = 1
-	for i = 1, n do
-		rslt = rslt + tbl[i]*power
-		power = power*2
-	end
-	return rslt
-end
-
--- Calculate bitwise xor of bytes m and n. 0 <= m,n <= 256.
+-- Calculate bitwise XOR of two bytes (0-255).
 local function bit_xor(m, n)
-	local tbl_m = cclxvi[m]
-	local tbl_n = cclxvi[n]
-	local tbl = {}
-	for i = 1, 8 do
-		if(tbl_m[i] ~= tbl_n[i]) then
-			tbl[i] = 1
-		else
-			tbl[i] = 0
-		end
-	end
-	return tbl_to_number(tbl)
+	return xor_nibbles[m % 16][n % 16]
+		+ 16 * xor_nibbles[math.floor(m / 16)][math.floor(n / 16)]
 end
 
 -- Return the binary representation of the number x with the width of `digits`.
@@ -501,40 +434,6 @@ local function convert_bitstring_to_bytes(data)
 	return msg
 end
 
--- Return a table that has 0's in the first entries and then the alpha
--- representation of the generator polynominal
-local function get_generator_polynominal_adjusted(num_ec_codewords,highest_exponent)
-	local gp_alpha = {[0]=0}
-	for i=0,highest_exponent - num_ec_codewords - 1 do
-		gp_alpha[i] = 0
-	end
-	local gp = generator_polynomial[num_ec_codewords]
-	for i=1,num_ec_codewords + 1 do
-		gp_alpha[highest_exponent - num_ec_codewords + i - 1] = gp[i]
-	end
-	return gp_alpha
-end
-
---- These converter functions use the log/antilog table above.
---- We could have created the table programatically, but I like fixed tables.
--- Convert polynominal in int notation to alpha notation.
-local function convert_to_alpha( tab )
-	local new_tab = {}
-	for i=0,#tab do
-		new_tab[i] = int_alpha[tab[i]]
-	end
-	return new_tab
-end
-
--- Convert polynominal in alpha notation to int notation.
-local function convert_to_int(tab,len_message)
-	local new_tab = {}
-	for i=0,#tab do
-		new_tab[i] = alpha_int[tab[i]]
-	end
-	return new_tab
-end
-
 -- That's the heart of the error correction calculation.
 local function calculate_error_correction(data,num_ec_codewords)
 	local mp
@@ -548,66 +447,31 @@ local function calculate_error_correction(data,num_ec_codewords)
 	local len_message = #mp
 
 	local highest_exponent = len_message + num_ec_codewords - 1
-	local gp_alpha,tmp
-	local he
-	local gp_int = {}
-	local mp_int,mp_alpha = {},{}
+	local gp = generator_polynomial[num_ec_codewords]
+	local mp_int = {}
 	-- create message shifted to left (highest exponent)
 	for i=1,len_message do
 		mp_int[highest_exponent - i + 1] = mp[i]
 	end
-	for i=1,highest_exponent - len_message do
+	for i=0,num_ec_codewords-1 do
 		mp_int[i] = 0
 	end
-	mp_int[0] = 0
-
-	mp_alpha = convert_to_alpha(mp_int)
 
 	while highest_exponent >= num_ec_codewords do
-		gp_alpha = get_generator_polynominal_adjusted(num_ec_codewords,highest_exponent)
-
-		-- Multiply generator polynomial by first coefficient of the above polynomial
-
-		-- take the highest exponent from the message polynom (alpha) and add
-		-- it to the generator polynom
-		local exp = mp_alpha[highest_exponent]
-		for i=highest_exponent,highest_exponent - num_ec_codewords,-1 do
-			if exp ~= 256 then
-				if gp_alpha[i] + exp >= 255 then
-					gp_alpha[i] = math.fmod(gp_alpha[i] + exp,255)
-				else
-					gp_alpha[i] = gp_alpha[i] + exp
-				end
-			else
-				gp_alpha[i] = 256
+		local exp = int_alpha[mp_int[highest_exponent]]
+		if exp ~= 256 then
+			-- The shifted generator is zero below these coefficients. Leave the
+			-- rest of the message in place instead of copying and converting it.
+			for i=1,num_ec_codewords+1 do
+				local index = highest_exponent - num_ec_codewords + i - 1
+				local coefficient = alpha_int[(gp[i] + exp) % 255]
+				mp_int[index] = bit_xor(coefficient, mp_int[index])
 			end
 		end
-		for i=highest_exponent - num_ec_codewords - 1,0,-1 do
-			gp_alpha[i] = 256
-		end
-
-		gp_int = convert_to_int(gp_alpha)
-		mp_int = convert_to_int(mp_alpha)
-
-
-		tmp = {}
-		for i=highest_exponent,0,-1 do
-			tmp[i] = bit_xor(gp_int[i],mp_int[i])
-		end
-		-- remove leading 0's
-		he = highest_exponent
-		for i=he,0,-1 do
-			-- We need to stop if the length of the codeword is matched
-			if i < num_ec_codewords then break end
-			if tmp[i] == 0 then
-				tmp[i] = nil
-				highest_exponent = highest_exponent - 1
-			else
-				break
-			end
-		end
-		mp_int = tmp
-		mp_alpha = convert_to_alpha(mp_int)
+		-- The leading coefficient is now zero, including when it was zero
+		-- before this step. Remove it and continue with the next coefficient.
+		mp_int[highest_exponent] = nil
+		highest_exponent = highest_exponent - 1
 	end
 	local ret = {}
 
@@ -1121,7 +985,9 @@ local function get_next_free_positions(matrix,x,y,dir,byte)
 end
 
 -- Add the data string (0's and 1's) to the matrix for the given mask.
+-- Return the data positions, bits, and debug labels for reuse with other masks.
 local function add_data_to_matrix(matrix,data,mask)
+	local layout = {}
 	local size = #matrix
 	local x,y,positions
 	local _x,_y,m
@@ -1134,7 +1000,11 @@ local function add_data_to_matrix(matrix,data,mask)
 		for i=1,#byte do
 			_x = positions[i][1]
 			_y = positions[i][2]
-			m = get_pixel_with_mask(mask,_x,_y,string.sub(byte,i,i))
+			local position = positions[i]
+			position[3] = string.sub(byte,i,i)
+			position[4] = i + 10
+			layout[#layout+1] = position
+			m = get_pixel_with_mask(mask,_x,_y,position[3])
 			if debugging then
 				matrix[_x][_y] = m * (i + 10)
 			else
@@ -1142,6 +1012,7 @@ local function add_data_to_matrix(matrix,data,mask)
 			end
 		end
 	end)
+	return layout
 end
 
 
@@ -1276,12 +1147,22 @@ local function calculate_penalty(matrix)
 end
 
 -- Create a matrix for the given parameters and calculate the penalty score.
--- Return both (matrix and penalty)
-local function get_matrix_and_penalty(version,ec_level,data,mask)
+-- Return the matrix, penalty, and reusable data layout.
+local function get_matrix_and_penalty(version,ec_level,data,mask,layout)
 	local tab = prepare_matrix_with_mask(version,ec_level,mask)
-	add_data_to_matrix(tab,data,mask)
+	if layout then
+		-- Data positions are identical for every mask. Reuse the positions
+		-- found for the first mask instead of walking the matrix eight times.
+		for _,position in ipairs(layout) do
+			local x, y = position[1], position[2]
+			local value = get_pixel_with_mask(mask,x,y,position[3])
+			tab[x][y] = debugging and value * position[4] or value
+		end
+	else
+		layout = add_data_to_matrix(tab,data,mask)
+	end
 	local penalty = calculate_penalty(tab)
-	return tab, penalty
+	return tab, penalty, layout
 end
 
 -- Return the matrix with the smallest penalty. To to this
@@ -1289,12 +1170,12 @@ end
 -- penalty (score) each.
 local function get_matrix_with_lowest_penalty(version,ec_level,data)
 	local tab, penalty
-	local tab_min_penalty, min_penalty
+	local tab_min_penalty, min_penalty, layout
 
 	-- try masks 0-7
-	tab_min_penalty, min_penalty = get_matrix_and_penalty(version,ec_level,data,0)
+	tab_min_penalty, min_penalty, layout = get_matrix_and_penalty(version,ec_level,data,0)
 	for i=1,7 do
-		tab, penalty = get_matrix_and_penalty(version,ec_level,data,i)
+		tab, penalty = get_matrix_and_penalty(version,ec_level,data,i,layout)
 		if penalty < min_penalty then
 			tab_min_penalty = tab
 			min_penalty = penalty
@@ -1336,7 +1217,6 @@ end
 -- 		get_mode = get_mode,
 -- 		get_length = get_length,
 -- 		add_pad_data = add_pad_data,
--- 		get_generator_polynominal_adjusted = get_generator_polynominal_adjusted,
 -- 		get_pixel_with_mask = get_pixel_with_mask,
 -- 		get_version_eclevel_mode_bistringlength = get_version_eclevel_mode_bistringlength,
 -- 		remainder = remainder,
