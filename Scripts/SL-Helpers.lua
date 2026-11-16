@@ -156,6 +156,7 @@ local NoteFieldWidth = {
 	pump = {
 		single  = 250,
 		versus  = 250,
+		couple  = 250,
 		double  = 500,
 		routine = 500,
 		halfdouble = 300
