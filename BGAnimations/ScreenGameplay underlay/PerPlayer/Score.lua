@@ -1,4 +1,4 @@
-local player = ...
+local player, RequestScoreRedraw = ...
 local pn = ToEnumShortString(player)
 
 local mods = SL[pn].ActiveModifiers
@@ -159,7 +159,12 @@ return LoadFont("Wendy/_wendy monospace numbers")..{
 		end
 	end,
 	JudgmentMessageCommand=function(self)
-		self:queuecommand("RedrawScore")
+		if RequestScoreRedraw then
+			RequestScoreRedraw(player, self)
+		else
+			-- Keep standalone loads working outside the gameplay underlay.
+			self:queuecommand("RedrawScore")
+		end
 	end,
 	RedrawScoreCommand=function(self)
 		if not IsEX then

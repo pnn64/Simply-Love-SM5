@@ -5,6 +5,7 @@ end
 
 local Players = GAMESTATE:GetHumanPlayers()
 local holdingCtrl = false
+local RequestScoreRedraw, RedrawScores = CreateScoreRedrawQueue(Players)
 
 local RestartHandler = function(event)
 	if not event then return end
@@ -54,6 +55,7 @@ end
 local t = Def.ActorFrame{
 	Name="GameplayUnderlay",
 	OnCommand=function(self)
+		self:SetUpdateFunction(RedrawScores)
 		if ThemePrefs.Get("KeyboardFeatures") and PREFSMAN:GetPreference("EventMode") and not GAMESTATE:IsCourseMode() then
 			SCREENMAN:GetTopScreen():AddInputCallback(RestartHandler)
 		end
@@ -79,7 +81,7 @@ for player in ivalues(Players) do
 	t[#t+1] = LoadActor("./PerPlayer/TournamentMode.lua", player)
 
 	t[#t+1] = LoadActor("./PerPlayer/UpperNPSGraph.lua", player)
-	t[#t+1] = LoadActor("./PerPlayer/Score.lua", player)
+	t[#t+1] = LoadActor("./PerPlayer/Score.lua", player, RequestScoreRedraw)
 	t[#t+1] = LoadActor("./PerPlayer/DifficultyMeter.lua", player)
 	t[#t+1] = LoadActor("./PerPlayer/LifeMeter/default.lua", player)
 	t[#t+1] = LoadActor("./PerPlayer/TargetScore/default.lua", player)
